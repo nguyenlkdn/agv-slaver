@@ -17,6 +17,11 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <string.h>
+
+char const digit[] = "0123456789";
+
+
 const uint8_t LcdCustomChar[] PROGMEM=//define 8 custom LCD chars
 {
 	0x00, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, // 0. 0/5 full progress block
@@ -184,13 +189,13 @@ void LCDhome(void)			//LCD cursor home
 {
 	LCDsendCommand(1<<LCD_HOME);
 }
-void LCDstring(uint8_t* data, uint8_t nBytes)	//Outputs string to LCD
+void LCDstring(char* data)	//Outputs string to LCD
 {
 register uint8_t i;
 
 	// check to make sure we have a good pointer
 	if (!data) return;
-
+	uint16_t nBytes = strlen(data);
 	// print data
 	for(i=0; i<nBytes; i++)
 	{
@@ -346,4 +351,36 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 		LCDsendChar(c);
 	}
 
+}
+
+char* itoa(uint32_t i, char b[]){
+    char* p = b;
+    if(i<0){
+        *p++ = '-';
+        i *= -1;
+    }
+    int shifter = i;
+    do{ //Move to where representation ends
+        ++p;
+        shifter = shifter/10;
+    }while(shifter);
+    *p = '\0';
+    do{ //Move back, inserting digits as u go
+        *--p = digit[i%10];
+        i = i/10;
+    }while(i);
+    return b;
+}
+
+void LCDsendNum(uint32_t num)
+{
+	char buffer[10];
+	itoa(num, buffer);
+	LCDstring(buffer);
+}
+
+void LCDPrintf(uint8_t x, uint8_t y, char* str)
+{
+	LCDGotoXY(x, y);
+	LCDstring(str);
 }

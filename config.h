@@ -1,0 +1,3 @@
+#define CALLING_LED_PIN	0x10
+#define SPARE_LED_PIN	0x20
+#define RS485RW_PIN		0x04

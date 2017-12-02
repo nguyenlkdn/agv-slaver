@@ -20,16 +20,21 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include "lcd_lib.h"
-
+#include "modbus.h"
+#include "config.h"
+uint32_t MOD_Buffer_counter = 0;
+uint8_t MOD_Buffer[255];
 //#define F_CPU 8000000ul
 
 //Strings stored in AVR Flash memory
 const uint8_t LCDwelcomeln1[] PROGMEM="AVR LCD DEMO\0";
 const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
-#define CALLING_LED_PIN	0x10
-#define SPARE_LED_PIN	0x20
-#define RS485RW_PIN		0x04
+
+// Define baud rate
+#define USART_BAUDRATE 38400   
+#define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
+
 // additional custom LCD characters
 const uint8_t backslash[8] PROGMEM= 
 {
@@ -110,8 +115,10 @@ void demoanimation(void)
 		}	
 }
 void uartInit(void)
-{
-
+{  
+	UBRRL = BAUD_PRESCALE;// Load lower 8-bits into the low byte of the UBRR register
+	UBRRH = (BAUD_PRESCALE >> 8); 
+	UCSRB = ((1<<TXEN)|(1<<RXEN) | (1<<RXCIE));
 }
 void timerInit(void)
 {
@@ -129,7 +136,6 @@ void timerInit(void)
 	TCCR1B |= (1 << CS10) | (1 << CS12);
 	
 	// enable interrupts
-	sei(); 
 
 }
 /*
@@ -145,20 +151,50 @@ int main(void)
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
 	timerInit();
+	uartInit();
 	LCDclr();//clears LCD
+	sei(); 
+
 	//modbusInit();
 
 	// LCDGotoXY(0, 0);
 	// LCDstring("TDNC", 4);
-	LCDGotoXY(0, 1);
-	LCDstring("TDNC", 4);
+	PORTD &= ~(RS485RW_PIN);
+	uint32_t data=0;
+	int32_t rc;
 	while(1)//loop demos
 	{
 		//modbusTickTimer();
 		//PORTC ^= (SPARE_LED_PIN | CALLING_LED_PIN);
-		delay1s();
+		_delay_ms(100);
+		rc = modbusarrayProcessing(rxbuffer, DataPos, 1);
+		DataPos = 0;
+		// LCDGotoXY(0, 0);
+		// int i;
+		// for(i=0;i<MOD_Buffer_counter;i++)
+		// {
+		// 	LCDsendNum(MOD_Buffer[i]);
+		// 	LCDsendChar(' ');
+		// }
 
-		//PORTD = (RS485RW_PIN);
+		// LCDGotoXY(0, 0);
+		// for(data=0;data<DataPos;data++)
+		// {
+		// 	if(data == 6)
+		// 	{
+		// 		break;
+		// 	}
+		// 	LCDsendNum(rxbuffer[data]);
+		// 	LCDsendChar(' ');
+		// }
+		// LCDGotoXY(0, 1);
+		// for(;data<DataPos;data++)
+		// {
+		// 	LCDsendNum(rxbuffer[data]);
+		// 	LCDsendChar(' ');
+		// }
+		// DataPos = 0;
+
 		//modbusExchangeRegisters(user, 0x01, 5);
 		//progress();
 		//delay1s();
@@ -178,7 +214,11 @@ int main(void)
 ISR(TIMER0_OVF_vect) {
     // process the timer1 overflow here
     PORTC ^= (CALLING_LED_PIN);
+    // Wait until last byte has been transmitted
+    // while((UCSRA &(1<<UDRE)) == 0);
 
+    // // Transmit data
+    // UDR = 'A';
 }
 
 // timer1 overflow
@@ -186,4 +226,13 @@ ISR(TIMER1_OVF_vect) {
     // process the timer1 overflow here
     PORTC ^= (SPARE_LED_PIN);
 
+}
+
+ISR(USART_RXC_vect){
+	//volatile uint8_t value = UDR;             //read UART register into value
+	rxbuffer[DataPos++] = UDR;
+	if(DataPos == 255)
+	{
+		DataPos = 0;
+	}
 }

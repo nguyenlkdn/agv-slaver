@@ -16,12 +16,11 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
-#include "lcd_lib.h"
-#include "yaMBSiavr.h"
-#include "uart.h"
 #include <inttypes.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include "lcd_lib.h"
+
 //#define F_CPU 8000000ul
 
 //Strings stored in AVR Flash memory
@@ -145,7 +144,6 @@ int main(void)
 	//IOConfig();
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
-	uart0_init(4800);
 	timerInit();
 	LCDclr();//clears LCD
 	//modbusInit();
@@ -158,7 +156,6 @@ int main(void)
 	{
 		//modbusTickTimer();
 		//PORTC ^= (SPARE_LED_PIN | CALLING_LED_PIN);
-		uart_puts("ABCDEFGG");
 		delay1s();
 
 		//PORTD = (RS485RW_PIN);

@@ -224,7 +224,7 @@ ISR(TIMER0_OVF_vect) {
 
     if(SLAVER_REG_WRITE[1] == SLAVER_ADDR)
     {
-    	request = 1;
+    	//request = 1;
     }
     haskey = 0;
     if(bit_is_clear(PINB, 0))

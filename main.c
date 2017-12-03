@@ -22,12 +22,25 @@
 #include "lcd_lib.h"
 #include "modbus.h"
 #include "config.h"
-uint32_t MOD_Buffer_counter = 0;
-uint8_t MOD_Buffer[255];
-//#define F_CPU 8000000ul
 
+uint16_t SLAVER_REG_READ[50];
+uint16_t SLAVER_REG_WRITE[50];
+uint8_t rxbuffer[MaxFrameIndex+1];
+uint32_t data=0;
+int32_t rc;
+
+uint16_t CONFIRMED = 0;
+uint16_t calling_debound = 0;
+uint16_t stop_debound = 0;
+uint16_t up_debound = 0;
+uint16_t down_debound = 0;
+uint16_t haskey = 0;
+
+uint8_t request = 0;
+uint8_t updown = 0;
+uint8_t isprint = 0;
 //Strings stored in AVR Flash memory
-const uint8_t LCDwelcomeln1[] PROGMEM="AVR LCD DEMO\0";
+const uint8_t LCDwelcomeln1[] PROGMEM="AGV Version\0";
 const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
 
@@ -53,7 +66,8 @@ void IOConfig(void)
 	DDRC |= (SPARE_LED_PIN | CALLING_LED_PIN);
 	PORTC &= ~(SPARE_LED_PIN | CALLING_LED_PIN);
 	DDRD |= (RS485RW_PIN);
-	PORTD |= (RS485RW_PIN);
+	PORTD &= ~(RS485RW_PIN);
+	DDRB &= ~(CALLING_BUTTON_PIN | STOP_BUTTON_PIN|UP_BUTTON_PIN|DOWN_BUTTON_PIN);
 }
 //delay 1s
 void delay1s(void)
@@ -73,11 +87,11 @@ void progress(void)
 	delay1s();
 	LCDclr();
 	CopyStringtoLCD(LCDprogress, 3, 0);
-	for(uint8_t i=0;i<255;i++)
+	for(uint8_t i=0;i<50;i++)
 		{
-			_delay_ms(10);
+			_delay_ms(1);
 			LCDGotoXY(0, 1);
-			LCDprogressBar(i, 255, 16);
+			LCDprogressBar(i, 50, 16);
 		}
 }
 //demonstration of animation
@@ -154,58 +168,44 @@ int main(void)
 	uartInit();
 	LCDclr();//clears LCD
 	sei(); 
+	progress();
+	LCDPrintf(0, 1, "                ");
+	LCDPrintf(0, 0, "AGV ");
+	LCDsendNum(SLAVER_ADDR);
+	LCDsendChar(':');
+	LCDsendChar(' ');
 
-	//modbusInit();
-
-	// LCDGotoXY(0, 0);
-	// LCDstring("TDNC", 4);
-	PORTD &= ~(RS485RW_PIN);
-	uint32_t data=0;
-	int32_t rc;
-	while(1)//loop demos
+	while(1)
 	{
-		//modbusTickTimer();
-		//PORTC ^= (SPARE_LED_PIN | CALLING_LED_PIN);
+		if(request == 0)
+		{
+			LCDPrintf(7, 0, "NoReq    ");
+		}
+		else
+		{
+			LCDPrintf(7, 0, "Request  ");
+		}
+		if(DataPos >= 8)
+		{
+			rc = modbusarrayProcessing(rxbuffer, DataPos, SLAVER_ADDR);
+			if(rc == 0)
+			{
+				DataPos = 0;
+			}
+		}
+
+		LCDGotoXY(0, 1);
+		LCDsendNum(SLAVER_REG_WRITE[0]);
+		LCDsendChar(' ');
+		LCDsendNum(SLAVER_REG_WRITE[1]);
+		LCDsendChar(' ');
+		LCDsendNum(SLAVER_REG_WRITE[2]);
+		LCDsendChar(' ');
+		LCDsendNum(SLAVER_REG_WRITE[3]);
+		LCDsendChar(' ');
+		LCDsendNum(SLAVER_REG_WRITE[4]);
+		LCDsendChar(' ');
 		_delay_ms(100);
-		rc = modbusarrayProcessing(rxbuffer, DataPos, 1);
-		DataPos = 0;
-		// LCDGotoXY(0, 0);
-		// int i;
-		// for(i=0;i<MOD_Buffer_counter;i++)
-		// {
-		// 	LCDsendNum(MOD_Buffer[i]);
-		// 	LCDsendChar(' ');
-		// }
-
-		// LCDGotoXY(0, 0);
-		// for(data=0;data<DataPos;data++)
-		// {
-		// 	if(data == 6)
-		// 	{
-		// 		break;
-		// 	}
-		// 	LCDsendNum(rxbuffer[data]);
-		// 	LCDsendChar(' ');
-		// }
-		// LCDGotoXY(0, 1);
-		// for(;data<DataPos;data++)
-		// {
-		// 	LCDsendNum(rxbuffer[data]);
-		// 	LCDsendChar(' ');
-		// }
-		// DataPos = 0;
-
-		//modbusExchangeRegisters(user, 0x01, 5);
-		//progress();
-		//delay1s();
-		//PORTC = 0x00;
-		//PORTD &=~ (RS485RW_PIN);
-		//progress();
-		// PORTC &= ~(SPARE_LED_PIN | CALLING_LED_PIN);
-		// uart_puts("ABCDEFGG");
-		// delay1s();
-
-		// demoanimation();
 	}
 	return 0;
 }
@@ -213,18 +213,108 @@ int main(void)
 // timer1 overflow
 ISR(TIMER0_OVF_vect) {
     // process the timer1 overflow here
-    PORTC ^= (CALLING_LED_PIN);
-    // Wait until last byte has been transmitted
-    // while((UCSRA &(1<<UDRE)) == 0);
+    if(SLAVER_REG_WRITE[0] == SLAVER_ADDR)
+    {
+    	PORTC ^= (CALLING_LED_PIN);
+    }
+    else
+    {
+    	PORTC &= ~(CALLING_LED_PIN);
+    }
 
-    // // Transmit data
-    // UDR = 'A';
+    if(SLAVER_REG_WRITE[1] == SLAVER_ADDR)
+    {
+    	request = 1;
+    }
+    haskey = 0;
+    if(bit_is_clear(PINB, 0))
+    {
+    	haskey = 1;
+    	if(++down_debound == 5)
+    	{
+    		PORTC |= (SPARE_LED_PIN);
+    		updown = 1;
+    		SLAVER_REG_READ[2] = 0;
+    		SLAVER_REG_READ[3] = 1;
+    		// LCDPrintf(0, 0, "DOWN");
+    	}
+    }
+    else
+    {
+    	down_debound = 0;
+    }
+
+    if(bit_is_clear(PINB, 1))
+    {
+    	haskey = 2;
+    	if(++up_debound == 5)
+    	{
+    		// LCDPrintf(0, 0, "UP");
+    		PORTC |= (SPARE_LED_PIN);
+    		updown = 0;
+    		SLAVER_REG_READ[2] = 1;
+    		SLAVER_REG_READ[3] = 0;
+    	}
+    }
+    else
+    {
+    	up_debound = 0;
+    }
+
+    if(bit_is_clear(PINB, 2))
+    {
+    	haskey = 3;
+    	if(++calling_debound == 5)
+    	{
+    		// LCDPrintf(0, 0, "CALL");
+    		PORTC |= (SPARE_LED_PIN);
+    		SLAVER_REG_READ[0] = 1;
+    		request = 1;
+    	}
+    }
+    else
+    {
+    	calling_debound = 0;
+    }
+
+    if(bit_is_clear(PINB, 3))
+    {
+    	haskey = 4;
+    	if(++stop_debound == 5)
+    	{
+    		// LCDPrintf(0, 0, "STOP");
+    		PORTC |= (SPARE_LED_PIN);
+    		SLAVER_REG_READ[0] = 0;
+    		request = 0;
+    	}
+    }
+    else
+    {
+    	stop_debound = 0;
+    }
+	if((haskey == 0))
+	{
+		PORTC &=~ (SPARE_LED_PIN);
+	}
+    // if(SLAVER_REG_WRITE[0] == haskey || (haskey != 0))
+    // {
+
+    // }
+    // else
+    // {
+    // 	PORTC &=~ (SPARE_LED_PIN);
+    // 	// if((haskey == 0))
+    // 	// {
+    // 	// 	PORTC &=~ (SPARE_LED_PIN);
+    // 	// }
+    // }
+
 }
 
 // timer1 overflow
 ISR(TIMER1_OVF_vect) {
     // process the timer1 overflow here
-    PORTC ^= (SPARE_LED_PIN);
+    //PORTC ^= (SPARE_LED_PIN);
 
 }
 

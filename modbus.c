@@ -10,13 +10,25 @@
 
 volatile unsigned char BusState = 0;
 volatile uint16_t modbusTimer = 0;
-volatile unsigned char rxbuffer[MaxFrameIndex+1];
 volatile uint16_t DataPos = 0;
 volatile unsigned char PacketTopIndex = 7;
 volatile unsigned char modBusStaMaStates = 0;
+/*
 
-uint16_t SLAVER_REG[50];
+*/
 
+/*
+
+*/
+uint16_t SLAVER_REG_READ[50];
+uint16_t SLAVER_REG_WRITE[50];
+/*
+
+*/
+
+/*
+
+*/
 uint8_t modbusGetBusState(void)
 {
 	return BusState;
@@ -139,18 +151,19 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
     int index, i;
     uint16_t crcgen, crcrec;
     uint8_t f03processbuffer[50];
+    uint8_t f16processbuffer[50];
     uint16_t startaddr = 0;
     uint16_t numofbytes = 0;
     for(index=0;index<lenght;index++)
     {
-        if(rxbuffer[index] == addr)
+        if(buffer[index] == addr)
         {
-            switch(rxbuffer[index+1])
+            switch(buffer[index+1])
             {
             case 0x03:
                 for(i=0;i<8;i++)
                 {
-                    f03processbuffer[i] = rxbuffer[index+i];
+                    f03processbuffer[i] = buffer[index+i];
                 }
                 crcgen = crc16(f03processbuffer, 6);
                 crcrec = combineBytes(f03processbuffer[6], f03processbuffer[7]);
@@ -163,8 +176,8 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
                 		f03processbuffer[2] = numofbytes;
                 		for(i=0;i<numofbytes;i++)
                 		{
-                			f03processbuffer[3 + (i*2)] = getHIGHbyte(SLAVER_REG[i+startaddr]);
-                			f03processbuffer[3 + (i*2) + 1] = getLOWbyte(SLAVER_REG[i+startaddr]);
+                			f03processbuffer[3 + (i*2)] = getHIGHbyte(SLAVER_REG_READ[i+startaddr]);
+                			f03processbuffer[3 + (i*2) + 1] = getLOWbyte(SLAVER_REG_READ[i+startaddr]);
                 		}
                 		crcgen = crc16(f03processbuffer, 3+f03processbuffer[2]);
                 		f03processbuffer[numofbytes + 3] = getHIGHbyte(crcgen);
@@ -208,18 +221,93 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
                     continue;
                 }
             case 0x10:
-                // for(i=0;i<ROBOT_RXBUFFER_SIZE;i++)
-                // {
-                // }
-                // numofbytes = rxbuffer[index+6];
-                // if((length - index) < numofbytes+9)
-                // {
-                //     return 1;
-                // }
+	            for(i=0;i<lenght;i++)
+	            {
+	                f16processbuffer[i] = buffer[index+i];
+	            }
+	            startaddr = combineBytes(f16processbuffer[2], f16processbuffer[3]);
+	            numofbytes = combineBytes(f16processbuffer[4], f16processbuffer[5])*2;              
+	            if((lenght - index) < numofbytes+9)
+                {
+                	// LCDGotoXY(0, 0);
+                	// LCDPrintf(0, 0, "Mismatch length");
+                    return 4;
+                }
+                else
+                {
+                	crcgen = crc16(f16processbuffer, numofbytes+7);
+                	crcrec = combineBytes(f16processbuffer[numofbytes+7], f16processbuffer[numofbytes+8]);
+                	if((numofbytes+startaddr) > MODBUS_MAXREG)
+                	{
+                		//LCDPrintf(0, 0, "T3");
+                		return 2;
+                	}
+                	else
+                	{
+                		if(crcrec == crcgen)
+                		{
+                			//LCDPrintf(0, 0, "T1");
+                			LCDGotoXY(0, 0);
+                			for(i=0;i<numofbytes/2;i++)
+                			{
+                				SLAVER_REG_WRITE[startaddr+i] = combineBytes(f16processbuffer[(i*2)+7], f16processbuffer[(i*2)+8]);
+                				// LCDsendNum(SLAVER_REG_WRITE[i]);
+                				// LCDsendChar(' ');
+                			}
+                			crcgen = crc16(f16processbuffer, 6);
+                			f16processbuffer[6] = getHIGHbyte(crcgen);
+                			f16processbuffer[7] = getLOWbyte(crcgen);
+                			USART_SendBytes(f16processbuffer, 8);
+
+                			// LCDGotoXY(0, 1);
+                			// LCDsendNum(f16processbuffer[6]);
+                			// LCDsendChar(' ');
+                			// LCDsendNum(f16processbuffer[7]);
+                			// LCDsendChar(' ');
+                			// LCDsendNum(crcgen);
+                			// LCDsendChar(' ');
+                			// LCDsendNum(f16processbuffer[3]);
+                			// LCDsendChar(' ');
+                			// LCDsendNum(f16processbuffer[4]);
+                			// LCDsendChar(' ');
+                			// LCDsendNum(f16processbuffer[5]);
+                			// LCDsendChar(' ');
+                			return 0;
+                		}
+                		else
+                		{
+                			//LCDPrintf(0, 1, "T2");
+                			return 1;
+                		}
+                	}
+
+
+                	// LCDGotoXY(0, 0);
+                	// LCDsendNum(startaddr);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+1]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+2]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+3]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+4]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+5]);
+                	// LCDGotoXY(0, 1);
+                	// LCDsendNum(numofbytes);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+7]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+8]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+9]);
+                	// LCDsendChar(' ');
+                	// LCDsendNum(f16processbuffer[numofbytes+10]);
+                	// LCDsendChar(' ');
+                }
                 // else
                 // {
-                //     crcgen = crc16(rxbuffer+index, numofbytes+7);
-                //     crcrec = combineBytes(rxbuffer[index+numofbytes+7], rxbuffer[index+numofbytes+8]);
                 //     if(crcgen == crcrec)
                 //     {
                 //         uint16_t startaddr = combineBytes(rxbuffer[index+2], rxbuffer[index+3]);

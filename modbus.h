@@ -90,7 +90,8 @@
 
 #define MODBUS_MAXREG 50
 
-extern uint16_t SLAVER_REG[50];
+extern uint16_t SLAVER_REG_READ[50];
+extern uint16_t SLAVER_REG_WRITE[50];
 
 /**
 * @brief    Configures the UART. Call this function only once.
@@ -100,7 +101,7 @@ extern void modbusInit(void);
 /**
 * @brief    receive/transmit data array
 */
-volatile unsigned char rxbuffer[MaxFrameIndex+1];
+extern uint8_t rxbuffer[MaxFrameIndex+1];
 
 /**
 * @brief    Current receive/transmit position

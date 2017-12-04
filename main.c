@@ -168,7 +168,7 @@ int main(void)
 	uartInit();
 	LCDclr();//clears LCD
 	sei(); 
-	//progress();
+	progress();
 	LCDPrintf(0, 1, "                ");
 	LCDPrintf(0, 0, "AGV ");
 	LCDsendNum(SLAVER_ADDR);

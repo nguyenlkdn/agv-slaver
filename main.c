@@ -35,14 +35,14 @@ uint16_t stop_debound = 0;
 uint16_t up_debound = 0;
 uint16_t down_debound = 0;
 uint16_t haskey = 0;
-
+uint16_t iscoming;
 uint8_t request = 0;
 uint8_t updown = 0;
 uint8_t isprint = 0;
 //Strings stored in AVR Flash memory
 const uint8_t LCDwelcomeln1[] PROGMEM="AGV Version\0";
 const uint8_t LCDprogress[] PROGMEM="Loading...\0";
-const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
+const uint8_t LCDanimation[] PROGMEM="Robot is coming!!!\0";
 
 // Define baud rate
 #define USART_BAUDRATE 38400   
@@ -168,15 +168,20 @@ int main(void)
 	uartInit();
 	LCDclr();//clears LCD
 	sei(); 
-	progress();
+	//progress();
 	LCDPrintf(0, 1, "                ");
 	LCDPrintf(0, 0, "AGV ");
 	LCDsendNum(SLAVER_ADDR);
 	LCDsendChar(':');
 	LCDsendChar(' ');
-
+	uint16_t print_sequence = 0;
+	uint16_t animation_print = 0;
 	while(1)
 	{
+		if(++print_sequence == 10)
+		{
+			print_sequence = 0;
+		}
 		if(request == 0)
 		{
 			LCDPrintf(7, 0, "NoReq    ");
@@ -184,6 +189,32 @@ int main(void)
 		else
 		{
 			LCDPrintf(7, 0, "Request  ");
+		}
+		if(iscoming != 0)
+		{
+			if(++animation_print < 3)
+			{
+				if(iscoming == 1)
+				{
+					LCDPrintf(0, 1, "Robot is coming");
+				}
+				else
+				{
+					LCDPrintf(0, 1, "Robot was come ");
+				}
+			}
+			else if (animation_print < 5)
+			{
+				LCDPrintf(0, 1, "               ");
+			}
+			else
+			{
+				animation_print = 0;
+			}
+		}
+		else
+		{
+			LCDPrintf(0, 1, "                ");
 		}
 		if(DataPos >= 8)
 		{
@@ -193,18 +224,17 @@ int main(void)
 				DataPos = 0;
 			}
 		}
-
-		LCDGotoXY(0, 1);
-		LCDsendNum(SLAVER_REG_WRITE[0]);
-		LCDsendChar(' ');
-		LCDsendNum(SLAVER_REG_WRITE[1]);
-		LCDsendChar(' ');
-		LCDsendNum(SLAVER_REG_WRITE[2]);
-		LCDsendChar(' ');
-		LCDsendNum(SLAVER_REG_WRITE[3]);
-		LCDsendChar(' ');
-		LCDsendNum(SLAVER_REG_WRITE[4]);
-		LCDsendChar(' ');
+		// LCDGotoXY(0, 1);
+		// LCDsendNum(SLAVER_REG_WRITE[0]);
+		// LCDsendChar(' ');
+		// LCDsendNum(SLAVER_REG_WRITE[1]);
+		// LCDsendChar(' ');
+		// LCDsendNum(SLAVER_REG_WRITE[2]);
+		// LCDsendChar(' ');
+		// LCDsendNum(SLAVER_REG_WRITE[3]);
+		// LCDsendChar(' ');
+		// LCDsendNum(SLAVER_REG_WRITE[4]);
+		// LCDsendChar(' ');
 		_delay_ms(100);
 	}
 	return 0;
@@ -222,9 +252,18 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    if(SLAVER_REG_WRITE[1] == SLAVER_ADDR)
+    if(SLAVER_REG_WRITE[1] > 0)
     {
-    	//request = 1;
+    	iscoming = SLAVER_REG_WRITE[1];
+    }
+    else
+    {
+    	iscoming = 0;
+    }
+    if((SLAVER_REG_WRITE[0] == 0) && (SLAVER_REG_WRITE[1] == 0) && (SLAVER_REG_WRITE[2] == 0))
+    {
+    	SLAVER_REG_READ[2] = 0;
+    	SLAVER_REG_READ[3] = 0;
     }
     haskey = 0;
     if(bit_is_clear(PINB, 0))
@@ -236,7 +275,6 @@ ISR(TIMER0_OVF_vect) {
     		updown = 1;
     		SLAVER_REG_READ[2] = 0;
     		SLAVER_REG_READ[3] = 1;
-    		// LCDPrintf(0, 0, "DOWN");
     	}
     }
     else
@@ -249,7 +287,6 @@ ISR(TIMER0_OVF_vect) {
     	haskey = 2;
     	if(++up_debound == 5)
     	{
-    		// LCDPrintf(0, 0, "UP");
     		PORTC |= (SPARE_LED_PIN);
     		updown = 0;
     		SLAVER_REG_READ[2] = 1;
@@ -296,19 +333,6 @@ ISR(TIMER0_OVF_vect) {
 	{
 		PORTC &=~ (SPARE_LED_PIN);
 	}
-    // if(SLAVER_REG_WRITE[0] == haskey || (haskey != 0))
-    // {
-
-    // }
-    // else
-    // {
-    // 	PORTC &=~ (SPARE_LED_PIN);
-    // 	// if((haskey == 0))
-    // 	// {
-    // 	// 	PORTC &=~ (SPARE_LED_PIN);
-    // 	// }
-    // }
-
 }
 
 // timer1 overflow

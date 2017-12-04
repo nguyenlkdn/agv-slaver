@@ -189,35 +189,9 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
                 	{
                 		return 2;
                 	}
-                	// LCDGotoXY(0, 0);
-                	// LCDsendNum(f03processbuffer[numofbytes + 3]);
-                	// LCDGotoXY(0, 1);
-                	// LCDsendNum(f03processbuffer[numofbytes + 3 + 1]);
-                	//LCDsendChar(' ');
-                	// LCDsendNum(crcrec);
-                	// LCDGotoXY(0, 0);
-                	// for(i=0;i<DataPos;i++)
-                	// {
-                	// 	if(i == 6)
-                	// 	{
-                	// 		break;
-                	// 	}
-                	// 	LCDsendNum(buffer[i]);
-                	// 	LCDsendChar(' ');
-                	// }
-                	// LCDGotoXY(0, 1);
-                	// for(;i<DataPos;i++)
-                	// {
-                	// 	LCDsendNum(buffer[i]);
-                	// 	LCDsendChar(' ');
-                	// }
                 }
                 else
                 {
-                	// LCDGotoXY(0, 1);
-                 //    LCDsendNum(crcgen);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(crcrec);
                     continue;
                 }
             case 0x10:
@@ -229,8 +203,6 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
 	            numofbytes = combineBytes(f16processbuffer[4], f16processbuffer[5])*2;              
 	            if((lenght - index) < numofbytes+9)
                 {
-                	// LCDGotoXY(0, 0);
-                	// LCDPrintf(0, 0, "Mismatch length");
                     return 4;
                 }
                 else
@@ -239,39 +211,21 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
                 	crcrec = combineBytes(f16processbuffer[numofbytes+7], f16processbuffer[numofbytes+8]);
                 	if((numofbytes+startaddr) > MODBUS_MAXREG)
                 	{
-                		//LCDPrintf(0, 0, "T3");
                 		return 2;
                 	}
                 	else
                 	{
                 		if(crcrec == crcgen)
                 		{
-                			//LCDPrintf(0, 0, "T1");
                 			LCDGotoXY(0, 0);
                 			for(i=0;i<numofbytes/2;i++)
                 			{
                 				SLAVER_REG_WRITE[startaddr+i] = combineBytes(f16processbuffer[(i*2)+7], f16processbuffer[(i*2)+8]);
-                				// LCDsendNum(SLAVER_REG_WRITE[i]);
-                				// LCDsendChar(' ');
                 			}
                 			crcgen = crc16(f16processbuffer, 6);
                 			f16processbuffer[6] = getHIGHbyte(crcgen);
                 			f16processbuffer[7] = getLOWbyte(crcgen);
                 			USART_SendBytes(f16processbuffer, 8);
-
-                			// LCDGotoXY(0, 1);
-                			// LCDsendNum(f16processbuffer[6]);
-                			// LCDsendChar(' ');
-                			// LCDsendNum(f16processbuffer[7]);
-                			// LCDsendChar(' ');
-                			// LCDsendNum(crcgen);
-                			// LCDsendChar(' ');
-                			// LCDsendNum(f16processbuffer[3]);
-                			// LCDsendChar(' ');
-                			// LCDsendNum(f16processbuffer[4]);
-                			// LCDsendChar(' ');
-                			// LCDsendNum(f16processbuffer[5]);
-                			// LCDsendChar(' ');
                 			return 0;
                 		}
                 		else
@@ -280,70 +234,11 @@ uint8_t modbusarrayProcessing(uint8_t *buffer, uint16_t lenght, uint8_t addr)
                 			return 1;
                 		}
                 	}
-
-
-                	// LCDGotoXY(0, 0);
-                	// LCDsendNum(startaddr);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+1]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+2]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+3]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+4]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+5]);
-                	// LCDGotoXY(0, 1);
-                	// LCDsendNum(numofbytes);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+7]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+8]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+9]);
-                	// LCDsendChar(' ');
-                	// LCDsendNum(f16processbuffer[numofbytes+10]);
-                	// LCDsendChar(' ');
                 }
-                // else
-                // {
-                //     if(crcgen == crcrec)
-                //     {
-                //         uint16_t startaddr = combineBytes(rxbuffer[index+2], rxbuffer[index+3]);
-                //         uint16_t numofreg = combineBytes(rxbuffer[index+4], rxbuffer[index+5]);
-                //         if(startaddr + numofreg > ROBOT_RXBUFFER_SIZE)
-                //         {
-                //         }
-                //         else
-                //         {
-                //             int i;
-                //             for(i=startaddr;i<startaddr+numofreg;i++)
-                //             {
-                //                 ROBOTRX_Buffer[i] = combineBytes(rxbuffer[index+7+i*2], rxbuffer[index+8+i*2]);
-                //             }
-                //             uint8_t respond[8];
-                //             for(i=0;i<6;i++)
-                //             {
-                //                 respond[i] = rxbuffer[index+i];
-                //             }
-                //             crcgen = crc16Gen(respond, 6);
-                //             respond[6] = getHIGHbyte(crcgen);
-                //             respond[7] = getLOWbyte(crcgen);
-                //             return 0;
-                //         }
-                //     }
-                //     else
-                //     {
-                //         continue;
-                //     }
-                // }
-
                 break;
             default:
                 continue;
             }
         }
     }
-    return 0;
 }

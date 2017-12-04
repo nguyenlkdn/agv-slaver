@@ -176,6 +176,8 @@ int main(void)
 	LCDsendChar(' ');
 	uint16_t print_sequence = 0;
 	uint16_t animation_print = 0;
+	uint8_t line1iscleared = 0;
+	uint8_t line2iscleared = 0;
 	while(1)
 	{
 		if(++print_sequence == 10)
@@ -216,13 +218,15 @@ int main(void)
 		{
 			LCDPrintf(0, 1, "                ");
 		}
+
 		if(DataPos >= 8)
 		{
 			rc = modbusarrayProcessing(rxbuffer, DataPos, SLAVER_ADDR);
-			if(rc == 0)
-			{
-				DataPos = 0;
-			}
+			DataPos = 0;
+			// if(rc == 0)
+			// {
+			// 	DataPos = 0;
+			// }
 		}
 		// LCDGotoXY(0, 1);
 		// LCDsendNum(SLAVER_REG_WRITE[0]);

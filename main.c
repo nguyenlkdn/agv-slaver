@@ -222,9 +222,10 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    if(SLAVER_REG_WRITE[1] == SLAVER_ADDR)
+    if((SLAVER_REG_WRITE[1] == 1) && SLAVER_REG_READ[0] == 0)
     {
-    	//request = 1;
+    	request = 1;
+    	SLAVER_REG_READ[0] = 1;
     }
     haskey = 0;
     if(bit_is_clear(PINB, 0))

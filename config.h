@@ -5,4 +5,4 @@
 #define STOP_BUTTON_PIN		0x02
 #define UP_BUTTON_PIN		0x04
 #define DOWN_BUTTON_PIN		0x08
-#define SLAVER_ADDR		4
+#define SLAVER_ADDR		3

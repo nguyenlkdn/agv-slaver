@@ -247,6 +247,35 @@ int main(void)
 // timer1 overflow
 ISR(TIMER0_OVF_vect) {
     // process the timer1 overflow here
+    // if(
+    // 	(SLAVER_REG_WRITE[0] == 0) &&
+    // 	(SLAVER_REG_WRITE[1] == 0) &&
+    // 	(SLAVER_REG_WRITE[2] == 0) &&
+    // 	(SLAVER_REG_WRITE[3] == 0) &&
+    // 	(SLAVER_REG_WRITE[4] == 0)
+    // 	)
+    // {
+    // 	SLAVER_REG_READ[0] = 0;
+    // 	SLAVER_REG_READ[1] = 0;
+    // 	SLAVER_REG_READ[2] = 0;
+    // 	SLAVER_REG_READ[3] = 0;
+    // 	SLAVER_REG_READ[4] = 0;
+    // 	iscoming = 0;
+    // 	request = 0;
+    // }
+    if(
+    	(SLAVER_REG_WRITE[4] == 1)
+    	)
+    {
+    	SLAVER_REG_READ[0] = 0;
+    	SLAVER_REG_READ[1] = 0;
+    	SLAVER_REG_READ[2] = 0;
+    	SLAVER_REG_READ[3] = 0;
+    	SLAVER_REG_READ[4] = 0;
+    	iscoming = 0;
+    	request = 0;
+    	SLAVER_REG_WRITE[4] == 0;
+    }
     if(SLAVER_REG_WRITE[0] == SLAVER_ADDR)
     {
     	PORTC ^= (CALLING_LED_PIN);

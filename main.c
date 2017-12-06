@@ -222,7 +222,10 @@ int main(void)
 		if(DataPos >= 8)
 		{
 			rc = modbusarrayProcessing(rxbuffer, DataPos, SLAVER_ADDR);
-			DataPos = 0;
+			if(rc != 4)
+			{
+				DataPos = 0;
+			}
 			// if(rc == 0)
 			// {
 			// 	DataPos = 0;

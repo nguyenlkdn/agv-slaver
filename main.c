@@ -281,6 +281,7 @@ ISR(TIMER0_OVF_vect) {
     		// LCDPrintf(0, 0, "STOP");
     		PORTC |= (SPARE_LED_PIN);
     		SLAVER_REG_READ[0] = 0;
+    		SLAVER_REG_READ[1] = 1;
     		request = 0;
     	}
     }

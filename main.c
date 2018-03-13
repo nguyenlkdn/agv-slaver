@@ -45,7 +45,7 @@ const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
 
 // Define baud rate
-#define USART_BAUDRATE 38400   
+#define USART_BAUDRATE 9600   
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 
 // additional custom LCD characters
@@ -222,14 +222,14 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    if((SLAVER_REG_WRITE[1] == 1))
-    {
-    	if((SLAVER_REG_READ[0] == 0))
-    	{
-    		request = 1;
-    		SLAVER_REG_READ[0] = 1;
-    	}
-    }
+    // if((SLAVER_REG_WRITE[1] == 1))
+    // {
+    // 	if((SLAVER_REG_READ[0] == 0))
+    // 	{
+    // 		request = 1;
+    // 		SLAVER_REG_READ[0] = 1;
+    // 	}
+    // }
     haskey = 0;
     if(bit_is_clear(PINB, 0))
     {
@@ -288,7 +288,7 @@ ISR(TIMER0_OVF_vect) {
     	{
     		// LCDPrintf(0, 0, "STOP");
     		PORTC |= (SPARE_LED_PIN);
-    		SLAVER_REG_READ[0] = 0;
+    		SLAVER_REG_READ[1] = 1;
     		request = 0;
     	}
     }

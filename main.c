@@ -45,7 +45,7 @@ const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
 
 // Define baud rate
-#define USART_BAUDRATE 38400   
+#define USART_BAUDRATE 9600   
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 
 // additional custom LCD characters
@@ -161,7 +161,7 @@ void timerInit(void)
 */
 int main(void)
 {
-	//IOConfig();
+	_delay_ms(500);
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
 	timerInit();
@@ -222,13 +222,13 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    if((SLAVER_REG_WRITE[1] == 1))
+    if((SLAVER_REG_WRITE[4] == 1))
     {
-    	if((SLAVER_REG_READ[0] == 0))
-    	{
-    		request = 1;
-    		SLAVER_REG_READ[0] = 1;
-    	}
+		SLAVER_REG_WRITE[4] = 0;
+		request = 0;
+		updown = 1;
+		SLAVER_REG_READ[2] = 0;
+		SLAVER_REG_READ[3] = 1;
     }
     haskey = 0;
     if(bit_is_clear(PINB, 0))
@@ -323,8 +323,8 @@ ISR(TIMER1_OVF_vect) {
 }
 
 ISR(USART_RXC_vect){
-	//volatile uint8_t value = UDR;             //read UART register into value
-	rxbuffer[DataPos++] = UDR;
+	volatile uint8_t value = UDR;             //read UART register into value
+	rxbuffer[DataPos++] = value;
 	if(DataPos == 255)
 	{
 		DataPos = 0;

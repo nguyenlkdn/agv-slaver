@@ -45,7 +45,7 @@ const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM="Robot is coming!!!\0";
 
 // Define baud rate
-#define USART_BAUDRATE 38400   
+#define USART_BAUDRATE 9600   
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 
 // additional custom LCD characters

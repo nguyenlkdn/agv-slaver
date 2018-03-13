@@ -45,7 +45,7 @@ const uint8_t LCDprogress[] PROGMEM="Loading...\0";
 const uint8_t LCDanimation[] PROGMEM=" LCD animation \0";
 
 // Define baud rate
-#define USART_BAUDRATE 38400   
+#define USART_BAUDRATE 9600   
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 
 // additional custom LCD characters
@@ -161,7 +161,7 @@ void timerInit(void)
 */
 int main(void)
 {
-	//IOConfig();
+	_delay_ms(500);
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
 	timerInit();

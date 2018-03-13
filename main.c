@@ -222,14 +222,23 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    if((SLAVER_REG_WRITE[1] == 1))
+    if(SLAVER_REG_WRITE[0] == 0 && SLAVER_REG_WRITE[1] == 0 && SLAVER_REG_WRITE[2] == 0)
     {
-    	if((SLAVER_REG_READ[0] == 0))
-    	{
-    		request = 1;
-    		SLAVER_REG_READ[0] = 1;
-    	}
+    	SLAVER_REG_READ[0] = 0;
+    	SLAVER_REG_READ[1] = 0;
+    	SLAVER_REG_READ[2] = 0;
+    	SLAVER_REG_READ[3] = 0;
+    	SLAVER_REG_READ[4] = 0;
+    	SLAVER_REG_READ[5] = 0;
     }
+    // if((SLAVER_REG_WRITE[1] == 1))
+    // {
+    // 	if((SLAVER_REG_READ[0] == 0))
+    // 	{
+    // 		request = 1;
+    // 		SLAVER_REG_READ[0] = 1;
+    // 	}
+    // }
     haskey = 0;
     if(bit_is_clear(PINB, 0))
     {
@@ -272,8 +281,8 @@ ISR(TIMER0_OVF_vect) {
     	{
     		// LCDPrintf(0, 0, "CALL");
     		PORTC |= (SPARE_LED_PIN);
-    		SLAVER_REG_READ[0] = 1;
-    		request = 1;
+    		//SLAVER_REG_READ[0] = 1;
+    		//request = 1;
     	}
     }
     else
@@ -288,7 +297,7 @@ ISR(TIMER0_OVF_vect) {
     	{
     		// LCDPrintf(0, 0, "STOP");
     		PORTC |= (SPARE_LED_PIN);
-    		SLAVER_REG_READ[0] = 0;
+    		//SLAVER_REG_READ[0] = 0;
     		request = 0;
     	}
     }

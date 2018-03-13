@@ -161,7 +161,7 @@ void timerInit(void)
 */
 int main(void)
 {
-	//IOConfig();
+	_delay_ms(500);
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
 	timerInit();
@@ -222,14 +222,14 @@ ISR(TIMER0_OVF_vect) {
     	PORTC &= ~(CALLING_LED_PIN);
     }
 
-    // if((SLAVER_REG_WRITE[1] == 1))
-    // {
-    // 	if((SLAVER_REG_READ[0] == 0))
-    // 	{
-    // 		request = 1;
-    // 		SLAVER_REG_READ[0] = 1;
-    // 	}
-    // }
+    if((SLAVER_REG_WRITE[1] == 1))
+    {
+    	if((SLAVER_REG_READ[0] == 0))
+    	{
+    		request = 1;
+    		SLAVER_REG_READ[0] = 1;
+    	}
+    }
     haskey = 0;
     if(bit_is_clear(PINB, 0))
     {
@@ -288,7 +288,7 @@ ISR(TIMER0_OVF_vect) {
     	{
     		// LCDPrintf(0, 0, "STOP");
     		PORTC |= (SPARE_LED_PIN);
-    		SLAVER_REG_READ[1] = 1;
+    		SLAVER_REG_READ[0] = 0;
     		request = 0;
     	}
     }

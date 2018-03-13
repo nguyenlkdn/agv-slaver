@@ -161,7 +161,7 @@ void timerInit(void)
 */
 int main(void)
 {
-	//IOConfig();
+	_delay_ms(500);
 	LCDinit();//init LCD bit, dual line, cursor right
 	IOConfig();
 	timerInit();
